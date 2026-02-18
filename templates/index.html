@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Churn Prediction | DevelopersHub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <h1>Churn Predictor</h1>
+            </div>
+            <p class="subtitle">AI-powered customer retention analysis</p>
+            {% if not model_loaded %}
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                Model not loaded. Please check the model file.
+            </div>
+            {% endif %}
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Left Panel: Input Form -->
+            <section class="input-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-user-edit"></i> Customer Details</h2>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="fillSampleData()">
+                        <i class="fas fa-magic"></i> Sample
+                    </button>
+                </div>
+
+                <form id="predictForm" class="form">
+                    <!-- Account Info -->
+                    <div class="form-section">
+                        <h3>Account Info</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="State">State</label>
+                                <select id="State" name="State" required>
+                                    {% for opt in features.categorical.State %}
+                                    <option value="{{ opt }}" {% if opt == 'CA' %}selected{% endif %}>{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="Area code">Area Code</label>
+                                <select id="Area code" name="Area code" required>
+                                    <option value="408">408</option>
+                                    <option value="415" selected>415</option>
+                                    <option value="510">510</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="Account length">Account Length (months)</label>
+                                <input type="number" id="Account length" name="Account length" min="0" value="100" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Plans -->
+                    <div class="form-section">
+                        <h3>Plans</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="International plan">International Plan</label>
+                                <select id="International plan" name="International plan" required>
+                                    {% for opt in features.categorical['International plan'] %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="Voice mail plan">Voice Mail Plan</label>
+                                <select id="Voice mail plan" name="Voice mail plan" required>
+                                    {% for opt in features.categorical['Voice mail plan'] %}
+                                    <option value="{{ opt }}">{{ opt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="Number vmail messages">Voicemail Messages</label>
+                                <input type="number" id="Number vmail messages" name="Number vmail messages" min="0" value="0" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Day Usage -->
+                    <div class="form-section">
+                        <h3>Day Usage</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="Total day minutes">Minutes</label>
+                                <input type="number" id="Total day minutes" name="Total day minutes" step="0.1" value="200" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="Total day calls">Calls</label>
+                                <input type="number" id="Total day calls" name="Total day calls" value="100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="Total day charge">Charge ($)</label>
+                                <input type="number" id="Total day charge" name="Total day charge" step="0.01" value="34" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Evening Usage -->
+                    <div class="form-section">
+                        <h3>Evening Usage</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="Total eve minutes">Minutes</label>
+                                <input type="number" id="Total eve minutes" name="Total eve minutes" step="0.1" value="200" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="Total eve calls">Calls</label>
+                                <input type="number" id="Total eve calls" name="Total eve calls" value="100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="Total eve charge">Charge ($)</label>
+                                <input type="number" id="Total eve charge" name="Total eve charge" step="0.01" value="17" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Night Usage -->
+                    <div class="form-section">
+                        <h3>Night Usage</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="Total night minutes">Minutes</label>
+                                <input type="number" id="Total night minutes" name="Total night minutes" step="0.1" value="200" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="Total night calls">Calls</label>
+                                <input type="number" id="Total night calls" name="Total night calls" value="100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="Total night charge">Charge ($)</label>
+                                <input type="number" id="Total night charge" name="Total night charge" step="0.01" value="9" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- International Usage -->
+                    <div class="form-section">
+                        <h3>International Usage</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="Total intl minutes">Minutes</label>
+                                <input type="number" id="Total intl minutes" name="Total intl minutes" step="0.1" value="10" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="Total intl calls">Calls</label>
+                                <input type="number" id="Total intl calls" name="Total intl calls" value="4" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="Total intl charge">Charge ($)</label>
+                                <input type="number" id="Total intl charge" name="Total intl charge" step="0.01" value="2.7" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Service Calls -->
+                    <div class="form-section">
+                        <h3>Support</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="Customer service calls">Customer Service Calls</label>
+                                <input type="number" id="Customer service calls" name="Customer service calls" min="0" value="1" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-brain"></i> Predict Churn
+                    </button>
+                </form>
+            </section>
+
+            <!-- Right Panel: Results -->
+            <section class="results-panel" id="resultsPanel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-chart-pie"></i> Prediction Result</h2>
+                </div>
+
+                <div class="result-placeholder" id="placeholder">
+                    <i class="fas fa-chart-bar"></i>
+                    <p>Fill in customer details and click "Predict Churn" to see results</p>
+                </div>
+
+                <div class="result-content" id="resultContent" style="display: none;">
+                    <!-- Main Prediction -->
+                    <div class="prediction-card" id="predictionCard">
+                        <div class="prediction-icon">
+                            <i class="fas fa-exclamation-circle" id="predictionIcon"></i>
+                        </div>
+                        <div class="prediction-text">
+                            <h3 id="predictionText">Churn</h3>
+                            <p id="riskText">High Risk</p>
+                        </div>
+                        <div class="prediction-probability">
+                            <span id="probabilityValue">85%</span>
+                            <small>Confidence</small>
+                        </div>
+                    </div>
+
+                    <!-- Probability Bars -->
+                    <div class="probability-bars">
+                        <div class="prob-bar">
+                            <label>Churn Probability</label>
+                            <div class="progress-bar">
+                                <div class="progress-fill churn" id="churnBar" style="width: 0%"></div>
+                                <span id="churnPercent">0%</span>
+                            </div>
+                        </div>
+                        <div class="prob-bar">
+                            <label>No Churn Probability</label>
+                            <div class="progress-bar">
+                                <div class="progress-fill no-churn" id="noChurnBar" style="width: 0%"></div>
+                                <span id="noChurnPercent">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Factors -->
+                    <div class="risk-factors" id="riskFactors">
+                        <h4><i class="fas fa-lightbulb"></i> Key Insights</h4>
+                        <ul id="insightsList">
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>DevelopersHub Corporation | AI/ML Engineering Internship Task 2</p>
+            <p>Model: Random Forest | Accuracy: 93.45%</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
